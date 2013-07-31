@@ -1,30 +1,115 @@
 extends layout
 
 block content
-    h1= title
-
-    h3
+    p
+        a(href="/") Top
         each p in paths
             /
-            a(href="/?p=/", onClick="jump(this)") #{p}
+            a.dir(href="/?p=/", onClick="jump(this)") #{p}
 
-    ul#files
-        each file in data
-            li
-                if file.type == 'DIRECTORY'
-                    a(href="/?p=#{file.path}") #{file.pathSuffix}
-                else
-                    a(href="/download?p=#{file.path}") #{file.pathSuffix}
+    table#files.table.table-striped.table-bordered
+        thead
+            tr
+                td.col-lg-3 Name
+                td Type
+                td Size
+                td Replica
+                td Block Size
+                td Mtime
+                td Permission
+                td.col-lg-2 Owner
+                td.col-lg-1 Operation
+        tbody
+            each file in data
+                tr
+                    if file.type == 'DIRECTORY'
+                        td: a(href="/?p=#{file.path}") #{file.pathSuffix}
+                        td dir
+                        td
+                        td
+                        td
+                        td.ts(ts="#{file.modificationTime}")
+                        td= file.permission
+                        td #{file.owner}:#{file.group}
+                        td.operation
+                    else
+                        td #{file.pathSuffix}
+                        td file
+                        td.fs(fs="#{file.length}")
+                        td= file.replication
+                        td= file.blockSize
+                        td.ts(ts="#{file.modificationTime}")
+                        td= file.permission
+                        td #{file.owner}:#{file.group}
+                        td.operation
+                            a.preview(href="#",onClick="preview(this)",data-path="#{file.path}",data-toggle="tooltip",data-placement="bottom",title="preview")
+                                i.icon-search
+                                | &nbsp;
+                            a.download(href="/download?p=#{file.path}",data-toggle="tooltip",data-placement="bottom",title="download")
+                                i.icon-download-alt
 
-    script(type='text/javascript')
+    #previewModal.modal.fade.col-10.col-offset-1
+        .modal-dailog
+            .modal-content
+                .modal-header
+                    button.close(type="button",data-dismiss="modal",aria-hidden="true") &times;
+                    h4.modal-title File Preview
+                .modal-body
+                    .container
+                        textarea#previewText.col-8.form-control(rows="20")
+                .modal-footer
+                    a.btn.btn-primary(href="#",data-dismiss="modal") Close
+
+
+    script.
+        function humanFileSize(bytes, si) {
+            var thresh = si ? 1000 : 1024;
+            if(bytes < thresh) return bytes + ' B';
+            var units = si ? ['kB','MB','GB','TB','PB','EB','ZB','YB'] : ['KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
+            var u = -1;
+            do {
+                bytes /= thresh;
+                ++u;
+            } while(bytes >= thresh);
+            return bytes.toFixed(1)+' '+units[u];
+        };
+        var tsTds = document.querySelectorAll('td.ts');
+        var i, t;
+        for (i=0;i<tsTds.length;i++) {
+            t = new Date(+tsTds[i].getAttribute('ts'))
+        tsTds[i].innerText = t.toLocaleString()
+        }
+        var fsTds = document.querySelectorAll('td.fs');
+        for (i=0;i<fsTds.length;i++) {
+            fsTds[i].innerText = humanFileSize(+fsTds[i].getAttribute('fs'), true)
+        }
+
         var jump = function(ele){
-            var ps = ele.parentNode.querySelectorAll('a')
+            var ps = ele.parentNode.querySelectorAll('a.dir')
             var i = Array.prototype.slice.call(ps).indexOf(ele)
 
             var p = [];
             for ( var m = 0; m <= i; m++ ) {
                 p.push(ps[m].innerHTML)
             }
-
             ele.href = ele.href + p.join('/')
         }
+
+        var preview = function(ele){
+            var pt = $('#previewText')
+            var path = ele.dataset.path
+            pt.empty()
+
+            console.log(path)
+
+            $.ajax({
+            dataType:'json',
+            url:'/preview?p=' + path,
+            success: function(json){
+                pt.val(json.content)
+                $('#previewModal').modal('show')
+                }
+            });
+        }
+
+        $('#files td.operation a').tooltip()

@@ -3,7 +3,8 @@
  */
 
 
-var WebHDFS = require('../lib/webhdfs')
+var WebHDFS = require('../lib/webhdfs'),
+    config = require('../etc/config.json')
 
 exports.index = function (req, res) {
     var path = req.query.p || '/'
@@ -12,7 +13,7 @@ exports.index = function (req, res) {
 
     client.list(path, function (err, data) {
             res.render('index', {
-                    title:'HDFS',
+                    title:config.title,
                     paths:path.replace(/(^\/*)|(\/*$)/g, "").split('/'),
                     data:data
                 }
@@ -20,12 +21,10 @@ exports.index = function (req, res) {
         }
     )
 
-}
-;
-
+};
 
 exports.download = function (req, res) {
-    var path = req.query.p || '/'
+    var path = req.query.p
 
     client = new WebHDFS();
     var file = client.get(path)
@@ -37,3 +36,16 @@ exports.download = function (req, res) {
     file.req.pipe(res)
 
 };
+
+exports.preview = function (req, res) {
+
+    var path = req.query.p
+
+    client = new WebHDFS();
+    client.preview(path, function (err, content) {
+        res.json({
+            content:content
+        })
+    })
+
+}

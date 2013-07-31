@@ -1,0 +1,6 @@
+{
+    "host":"localhost",
+    "port":50070,
+    "base":"",
+    "title":"HDFS"
+}
