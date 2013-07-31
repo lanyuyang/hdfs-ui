@@ -1,0 +1,30 @@
+extends layout
+
+block content
+    h1= title
+
+    h3
+        each p in paths
+            /
+            a(href="/?p=/", onClick="jump(this)") #{p}
+
+    ul#files
+        each file in data
+            li
+                if file.type == 'DIRECTORY'
+                    a(href="/?p=#{file.path}") #{file.pathSuffix}
+                else
+                    a(href="/download?p=#{file.path}") #{file.pathSuffix}
+
+    script(type='text/javascript')
+        var jump = function(ele){
+            var ps = ele.parentNode.querySelectorAll('a')
+            var i = Array.prototype.slice.call(ps).indexOf(ele)
+
+            var p = [];
+            for ( var m = 0; m <= i; m++ ) {
+                p.push(ps[m].innerHTML)
+            }
+
+            ele.href = ele.href + p.join('/')
+        }
